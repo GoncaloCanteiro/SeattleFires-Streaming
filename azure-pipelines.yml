@@ -1,0 +1,44 @@
+trigger:
+  - none
+
+variables:
+  - group: credentials-gc
+
+pool:
+  vmImage: ubuntu-latest
+
+
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.9'
+      addToPath: true
+      architecture: 'x64'
+  - script: |
+      curl -sSL https://install.python-poetry.org | python3 -
+      poetry install
+    displayName: 'Install poetry and dependencies'
+  - script: |
+      pip install dbx databricks-cli
+      dbx configure
+      dbx deploy --no-rebuild
+    displayName: "Install databricks utilities and deploy"
+    env:
+      DATABRICKS_HOST: $(DATABRICKS_HOST)
+      DATABRICKS_TOKEN: $(DATABRICKS_TOKEN)
+  - powershell: |
+      Write-Output "[learning_instance]" | Out-File ~/.databrickscfg -Encoding ASCII
+      Write-Output "host = $(DATABRICKS_HOST)" | Out-File ~/.databrickscfg -Encoding ASCII -Append
+      Write-Output "token = $(DATABRICKS_TOKEN)" | Out-File ~/.databrickscfg -Encoding ASCII -Append
+    displayName: "Configure databricks-cli"
+  - script: |
+      poetry build                                               
+      dbfs cp --overwrite dist/seattle_fires_challenge_gc-0.1.0-py3-none-any.whl dbfs:/whl/seattle_fires_challenge_gc-0.1.0-py3-none-any.whl
+      databricks workspace import -o -l PYTHON notebooks/seattle_api.py /Users/g.canteiro@kigroup.de/SeattleFiresComplete
+    env:
+      DATABRICKS_HOST: $(DATABRICKS_HOST)
+      DATABRICKS_TOKEN: $(DATABRICKS_TOKEN)
+    displayName: "Copy whl into DBFS"
+
+
+# python3 setup.py bdist_wheel

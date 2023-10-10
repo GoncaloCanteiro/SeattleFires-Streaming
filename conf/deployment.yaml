@@ -1,0 +1,35 @@
+environments:
+  default:
+    workflows:
+      - name: "SeattleFiresChallenge-gc"
+        tasks:
+          - task_key: Task_bronze
+            description: "Bronze layer"
+            job_cluster_key: seattle_stream_cluster
+            python_wheel_task:
+              package_name: "seattle_fires_challenge_gc"
+              entry_point: "bronze"
+            libraries:
+              - whl: dbfs:/whl/seattle_fires_challenge_gc-0.1.0-py3-none-any.whl
+          - task_key: Task_silver
+            description: "Silver layer"
+            job_cluster_key: seattle_stream_cluster
+            python_wheel_task:
+              package_name: "seattle_fires_challenge_gc"
+              entry_point: "silver"
+            libraries:
+              - whl: dbfs:/whl/seattle_fires_challenge_gc-0.1.0-py3-none-any.whl
+          - task_key: Task_gold
+            description: "Gold layer"
+            job_cluster_key: seattle_stream_cluster
+            python_wheel_task:
+              package_name: "seattle_fires_challenge_gc"
+              entry_point: "gold"
+            libraries:
+              - whl: dbfs:/whl/seattle_fires_challenge_gc-0.1.0-py3-none-any.whl
+        job_clusters:
+          - job_cluster_key: seattle_stream_cluster
+            new_cluster:
+              spark_version: "12.2.x-scala2.12"
+              node_type_id: "Standard_DS3_v2"
+              num_workers: 1
